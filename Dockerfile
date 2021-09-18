@@ -1,45 +1,27 @@
-FROM ubuntu:16.04
+FROM alpine:latest
 
 MAINTAINER Sebastian Smolinski "sebastian.smolinski6@gmail.com"
 
 ENV MAVEN_VERSION 3.6.3
 
-RUN echo deb http://archive.ubuntu.com/ubuntu xenial universe > /etc/apt/sources.list.d/universe.list
-RUN apt-get update && apt-get install -y wget git curl zip monit openssh-server git iptables ca-certificates daemon net-tools libfontconfig-dev
-
 #Install AdoptOpenJDK 11
 #--------------------
-RUN echo "# Installing AdoptOpenJDK 11" && \
-	apt-get install -y software-properties-common debconf-utils apt-transport-https ca-certificates && \
-	add-apt-repository --yes https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ && \
-	apt-get update && \
-	apt-get install -y --allow-unauthenticated adoptopenjdk-11-hotspot
-	
+RUN apk --no-cache add openjdk11 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
+RUN apk add bash vim curl wget jq docker git tar unzip bash-completion ca-certificates
+
 # Maven related
 # -------------
-ENV MAVEN_ROOT /var/lib/maven
-ENV MAVEN_HOME $MAVEN_ROOT/apache-maven-$MAVEN_VERSION
-ENV MAVEN_OPTS -Xms256m -Xmx512m
-
-RUN echo "# Installing Maven " && echo ${MAVEN_VERSION} && \
-    wget --no-verbose -O /tmp/apache-maven-$MAVEN_VERSION.tar.gz \
-    http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-    mkdir -p $MAVEN_ROOT && \
-    tar xzf /tmp/apache-maven-$MAVEN_VERSION.tar.gz -C $MAVEN_ROOT && \
-    ln -s $MAVEN_HOME/bin/mvn /usr/local/bin && \
-    rm -f /tmp/apache-maven-$MAVEN_VERSION.tar.gz
+RUN cd /opt && curl -sSl http://mirror.vorboss.net/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz | tar -xz
 
 VOLUME /var/lib/maven
 
 # Node related
 # ------------
-
-RUN echo "# Installing Nodejs" && \
-    curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
-    apt-get install -y nodejs build-essential && \
-    npm set strict-ssl false && \
-    npm install -g npm@latest && \
-    npm install -g bower grunt grunt-cli && \
-    npm cache clear -f && \
-    npm install -g n && \
-    n stable
+RUN echo "# Installing Nodejs"
+RUN apk add --update nodejs npm
+RUN npm set strict-ssl false && \
+        npm install -g npm@latest && \
+        npm install -g bower grunt grunt-cli && \
+        npm cache clear -f && \
+        npm install -g n && \
+        n stable
